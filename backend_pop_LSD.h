@@ -56,8 +56,8 @@ pop_map *population; //create global pop_map;
 #define INIT_POPULATION_MODULE(model, t_start,  ... ) { population = new pop_map(model, t_start, __VA_ARGS__ ); }
 //to do: Change to VARGS stuff.
 
-#define POP_INITN_GENERATIONS population->init_generations(); //number of generations it takes to initialise the model
-#define POP_CONSTN_BIRTH(n) population->const_pop_fert(n);
+#define POP_INITN_GENERATIONS { population->init_generations(); } //number of generations it takes to initialise the model
+#define POP_CONSTN_BIRTH(n) ( population->const_pop_fert(n) )
 
 #define POP_ADVANCE_TIME { population->advance_time(); }
 
@@ -72,48 +72,48 @@ pop_map *population; //create global pop_map;
 #define POP_ADD_PERSONS(obj) POP_ADD_PERSON_PARENTS( obj, NULL, NULL)
 #define POP_ADD_PERSON       POP_ADD_PERSON_PARENTS( p, NULL, NULL)
 
-#define POP_DIE_PERSONS( obj ) population->person_dies( obj );
-#define POP_DIE_PERSON population->person_dies( p );
+#define POP_DIE_PERSONS( obj ) { population->person_dies( obj ); }
+#define POP_DIE_PERSON         { population->person_dies( p ); }
 
 #define POP_SET_DAGE( obj, d_age ) { population->person_set_d_age( p, d_age ); }
 #define POP_SET_DAGES( obj, d_age ) { population->person_set_d_age( obj, d_age ); }
 
-#define POP_ALIVE         population->is_alive( p )
-#define POP_ALIVES( obj ) population->is_alive( obj )
+#define POP_ALIVE         ( population->is_alive( p )   )
+#define POP_ALIVES( obj ) ( population->is_alive( obj ) )
 
-#define POP_AGE population->age_of( p )
-#define POP_AGES( obj ) population->age_of( obj )
+#define POP_AGE         ( population->age_of( p )   )
+#define POP_AGES( obj ) ( population->age_of( obj ) )
 
-#define POP_D_AGE         population->d_age_of( p )
-#define POP_D_AGES( obj ) population->d_age_of( obj )
+#define POP_D_AGE         ( population->d_age_of( p )   )
+#define POP_D_AGES( obj ) ( population->d_age_of( obj ) )
 
-#define POP_FEMALE         population->is_female( p )
-#define POP_FEMALES( obj ) population->is_female( obj )
+#define POP_FEMALE         ( population->is_female( p )   )
+#define POP_FEMALES( obj ) ( population->is_female( obj ) )
 
-#define POP_FATHER         population->father_of( p )
-#define POP_FATHERS( obj ) population->father_of( obj )
+#define POP_FATHER         ( population->father_of( p )   )
+#define POP_FATHERS( obj ) ( population->father_of( obj ) )
 
-#define POP_MOTHER         population->mother_of( p )
-#define POP_MOTHERS( obj ) population->mother_of( obj )
+#define POP_MOTHER         ( population->mother_of( p )   )
+#define POP_MOTHERS( obj ) ( population->mother_of( obj ) )
 
-#define POP_MGENITOR          population->alive_last_mgenitor(p)
-#define POP_MGENITORS( obj ) population->alive_last_mgenitor(obj)
+#define POP_MGENITOR         ( population->alive_last_mgenitor(p)   )
+#define POP_MGENITORS( obj ) ( population->alive_last_mgenitor(obj) )
 
-#define POP_CYCLE_CHILDREN for(object* c_child = population->first_child_of(p); c_child != NULL; c_child = population->next_child_of(p))
-#define POP_CYCLE_CHILDRENS ( obj ) for(object* c_child = population->first_child_of(obj); c_child != NULL; c_child = population->next_child_of(obj))
+#define POP_CYCLE_CHILDREN  for(object* c_child = population->first_child_of(p); c_child != NULL; c_child = population->next_child_of(p))
+#define POP_CYCLE_CHILDRENS( obj ) for(object* c_child = population->first_child_of(obj); c_child != NULL; c_child = population->next_child_of(obj))
 
 #define POP_INFO           { plog(population->person_info(p).c_str()); }
-#define POP_INFOS ( obj )  { population->person_info( obj ).c_str(); }
+#define POP_INFOS( obj )   { population->person_info( obj ).c_str(); }
 
 
 //Return random agents alive and with gender as specified
 
-#define POP_RANDOM_PERSON(min_age, max_age) population->random_person(-1, min_age, max_age)
-#define POP_RANDOM_PERSONF(min_age, max_age) population->random_person(1, min_age, max_age)
-#define POP_RANDOM_PERSONM(min_age, max_age) population->random_person(0, min_age, max_age)
+#define POP_RANDOM_PERSON(min_age, max_age)  ( population->random_person(-1, min_age, max_age))
+#define POP_RANDOM_PERSONF(min_age, max_age) ( population->random_person(1, min_age, max_age) )
+#define POP_RANDOM_PERSONM(min_age, max_age) ( population->random_person(0, min_age, max_age) )
 
-#define POP_FAMILY_DEGREE( obj1, obj2 ) population->family_degree( obj1, obj2, -5);
-#define POP_CHECK_INCEST( obj1, obj2, prohibDegree ) population->check_if_incest( obj1, obj2, prohibDegree )
+#define POP_FAMILY_DEGREE( obj1, obj2 )  ( population->family_degree( obj1, obj2, -5) )
+#define POP_CHECK_INCEST( obj1, obj2, prohibDegree ) ( population->check_if_incest( obj1, obj2, prohibDegree )  )
 
 
 //A set of macros in combination with pajek
