@@ -172,7 +172,7 @@ class pop_map
   double t_now; //starting time
   double t_unit; //interval size for time
 
-  std::unordered_map< int, pop_person > persons;  //all agent information, alive or dead, sorted by their unique ID
+  std::map< int, pop_person > persons;  //all agent information, alive or dead, sorted by their unique ID
   //to do: this is rather slow as it seems. The reason is
 
   //some functionality to subset alive agents
