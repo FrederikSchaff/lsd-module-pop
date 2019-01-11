@@ -172,7 +172,8 @@ class pop_map
   double t_now; //starting time
   double t_unit; //interval size for time
 
-  std::map< int, pop_person > persons;  //all agent information, alive or dead, sorted by their unique ID
+  std::unordered_map< int, pop_person > persons;  //all agent information, alive or dead, sorted by their unique ID
+  //to do: this is rather slow as it seems. The reason is
 
   //some functionality to subset alive agents
   std::multimap< double, int > males_by_birth; //helper to efficiently subset persons that are male by age
@@ -199,6 +200,7 @@ class pop_map
   double d_age_of(int uID);
   bool is_female(int uID);
   bool is_alive(int uID);
+  int nchildren(int uID);
   char advance_age_or_die(int uID); //advance age ('a') or die ('d').
   std::string person_info(int uID);
 
@@ -253,6 +255,7 @@ class pop_map
   double d_age_of(object *uID);
   bool is_female(object *uID);
   bool is_alive(object *uID);
+  int nchildren(object *uID);
 
   object* random_person(int gender, double age_low, double age_high );
 

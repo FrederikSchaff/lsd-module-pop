@@ -99,6 +99,9 @@ pop_map *population; //create global pop_map;
 #define POP_MGENITOR         ( population->alive_last_mgenitor(p)   )
 #define POP_MGENITORS( obj ) ( population->alive_last_mgenitor(obj) )
 
+#define POP_NCHILDREN   ( population->nchildren(p) )
+#define POP_NCHILDRENS( obj )   ( population->nchildren( obj ) )
+
 #define POP_CYCLE_CHILDREN  for(object* c_child = population->first_child_of(p); c_child != NULL; c_child = population->next_child_of(p))
 #define POP_CYCLE_CHILDRENS( obj ) for(object* c_child = population->first_child_of(obj); c_child != NULL; c_child = population->next_child_of(obj))
 

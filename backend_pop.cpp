@@ -30,6 +30,15 @@
 *
 *************************************************************/
 
+int pop_map::nchildren(object *uID){
+    return nchildren( uID->unique_id() );
+}
+
+int pop_map::nchildren(int uID)
+{
+  return int(persons.at(uID).children.c_uIDs.size() );
+}
+
 void pop_map::add_person(object *uID, object *f_uID, object *m_uID){
   add_person(uID->unique_id(), f_uID != NULL ? f_uID->unique_id() : -1, m_uID != NULL ? m_uID->unique_id() : -1);
 }
