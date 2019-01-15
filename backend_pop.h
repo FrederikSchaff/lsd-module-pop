@@ -178,6 +178,7 @@ class pop_map
   //some functionality to subset alive agents
   std::multimap< double, int > males_by_birth; //helper to efficiently subset persons that are male by age
   std::multimap< double, int > females_by_birth; //same for females
+  int n_alive;
 
 
                                    // using agents.emplace_hint(agents.end(),uID,pop_agent() )
@@ -213,6 +214,7 @@ class pop_map
   : t_now(t_start), t_unit(t_unit)
   {
     model = new pop_model(model_type, t_unit, par1, par2);
+    n_alive=0;
   }
   ~pop_map()
   {
@@ -236,6 +238,9 @@ class pop_map
 
   int n_persons(){
     return int(persons.size());
+  }
+  int n_persons_alive(){
+    return n_alive;
   }
 
   void add_person(object *uID, object *f_uID, object *m_uID);

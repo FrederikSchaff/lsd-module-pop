@@ -118,6 +118,8 @@ pop_map *population; //create global pop_map;
 #define POP_FAMILY_DEGREE( obj1, obj2 )  ( population->family_degree( obj1, obj2, -5) )
 #define POP_CHECK_INCEST( obj1, obj2, prohibDegree ) ( population->check_if_incest( obj1, obj2, prohibDegree )  )
 
+#define POP_SIZE ( double( population->n_persons_alive() ) )
+
 
 //A set of macros in combination with pajek
 //not yet adjusted!

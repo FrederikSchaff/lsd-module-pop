@@ -49,6 +49,7 @@ void pop_map::add_person(int uID, int f_uID, int m_uID)
   const double age = 0.0;
   const double &t_birth = t_now;
   persons.emplace_hint(persons.end(),uID,pop_person(uID, f_uID, m_uID, female, t_birth, age, model->age_of_death() ) );
+  ++n_alive;
   if (true == female)
     females_by_birth.emplace_hint(females_by_birth.end(),t_birth,uID);
   else
@@ -138,6 +139,8 @@ void pop_map::person_dies(int uID)
     females_by_birth.erase(to_del);
   else
     males_by_birth.erase(to_del);
+
+  --n_alive;
 
   VERBOSE_MODE(TEST_POP_MODULE && uID < 50){
     char test_msg[300];
