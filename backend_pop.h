@@ -93,6 +93,12 @@ struct pop_model_BLL
         }
         max_life =  (- log(alpha) / beta);  //bll (2)
         exp_life =  1.0 / beta + (alpha * log(alpha) )/ ( (1.0-alpha)*beta);  //bll (3)
+		if ( ! fast ) {
+			plog("\nPOPULATION MODULE - INFO : Selected model 'BLL'");
+			char buffer[300];
+			sprintf(buffer,"\n.................. alpha: %g, beta: %g, max_life: %g, exp_life: %g",alpha, beta, max_life, exp_life);
+			plog(buffer);
+		}
       }
 
     double uncond_sr(double age); //unconditional survival rate at age / ccdf
@@ -117,12 +123,16 @@ struct pop_model
 
     switch (model_type)
     {
-      case -1: error_hard( "Error in 'pop_model::pop_model()'", "Invalid choice for the population model",
+      case -1: 	error_hard( "Error in 'pop_model::pop_model()'", "Invalid choice for the population model",
 							"fix your code to prevent this situation." );
-              break; //default
-      case 0: break; //none
-      case 1: BLL = new pop_model_BLL(t_unit, par1, par2);
-              break;
+				break; //default
+				
+      case 0: 	if ( ! fast )
+					plog("\nPOPULATION MODULE - INFO : Selected model 'NONE'");
+				break; //none
+				
+      case 1: 	BLL = new pop_model_BLL(t_unit, par1, par2);
+				break;
     }
   }
   ~pop_model()
@@ -171,6 +181,7 @@ class pop_map
   pop_model *model; //hold info on survival function / statistical or data driven population model
   double t_now; //starting time
   double t_unit; //interval size for time
+  double femaleRatio; //chance to be female
 
   std::map< int, pop_person > persons;  //all agent information, alive or dead, sorted by their unique ID
   //to do: this is rather slow as it seems. The reason is
@@ -210,8 +221,8 @@ class pop_map
 
   public:   //external (access via macros)
 
-  pop_map(const char model_type[], double t_start, double t_unit, double par1=0.0, double par2=0.0)
-  : t_now(t_start), t_unit(t_unit)
+  pop_map(const char model_type[], double t_start, double t_unit, double femaleRatio, double par1=0.0, double par2=0.0)
+  : t_now(t_start), t_unit(t_unit), femaleRatio(femaleRatio)
   {
     model = new pop_model(model_type, t_unit, par1, par2);
     n_alive=0;

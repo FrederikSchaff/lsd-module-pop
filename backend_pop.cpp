@@ -45,7 +45,7 @@ void pop_map::add_person(object *uID, object *f_uID, object *m_uID){
 
 void pop_map::add_person(int uID, int f_uID, int m_uID)
 {
-  bool female = RND > 0.5 ? true : false;
+  bool female = RND < femaleRatio ? true : false;
   const double age = 0.0;
   const double &t_birth = t_now;
   persons.emplace_hint(persons.end(),uID,pop_person(uID, f_uID, m_uID, female, t_birth, age, model->age_of_death() ) );
