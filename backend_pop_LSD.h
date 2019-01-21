@@ -1,41 +1,41 @@
 /*************************************************************
-* backend_pop_LSD.h
-* Copyright: Frederik Schaff
-* Version: 0.11 (jan 2019)
-*
-* Licence: MIT
-*
-*
-*  LSD Population module - backend for LSD (least LSD-GIS)
-*  written by Frederik Schaff, Ruhr-University Bochum
-*
-*  for infos on LSD see https://github.com/marcov64/Lsd
-*
-*  The complete package has the following files:
-*  [1] readme.md         ; readme file with instructions and information
-*                          on the underlying model.
-*  [2] fun_templ_pop.cpp ; a template file for the user model, containing the
-*                          links to the population backend (which needs to be place in a folder "lsd-modules/pop").
-*  [3] lsd-modules\pop\backend_pop.h     ; contains the c++ declarations and new macros.
-*  [4] lsd-modules\pop\backend_pop.cpp   ; contains the c++ core code for the pop backend.
-*  [5] LICENSE ; the MIT licence
-*  [6] LSD_macros_pop.html      ; The documentation
-*
-*  Currently implemented population model:
-*  BLL : Boucekkine, Raouf; La Croix, David de; Licandro, Omar (2002):
-*  Vintage Human Capital, Demographic Trends, and Endogenous Growth.
-*  In Journal of Economic Theory 104 (2), pp. 340–375.
-*  DOI: 10.1006/jeth.2001.2854.
-*
-*
+    backend_pop_LSD.h
+    Copyright: Frederik Schaff
+    Version: 0.11 (jan 2019)
+
+    Licence: MIT
+
+
+    LSD Population module - backend for LSD (least LSD-GIS)
+    written by Frederik Schaff, Ruhr-University Bochum
+
+    for infos on LSD see https://github.com/marcov64/Lsd
+
+    The complete package has the following files:
+    [1] readme.md         ; readme file with instructions and information
+                           on the underlying model.
+    [2] fun_templ_pop.cpp ; a template file for the user model, containing the
+                           links to the population backend (which needs to be place in a folder "lsd-modules/pop").
+    [3] lsd-modules\pop\backend_pop.h     ; contains the c++ declarations and new macros.
+    [4] lsd-modules\pop\backend_pop.cpp   ; contains the c++ core code for the pop backend.
+    [5] LICENSE ; the MIT licence
+    [6] LSD_macros_pop.html      ; The documentation
+
+    Currently implemented population model:
+    BLL : Boucekkine, Raouf; La Croix, David de; Licandro, Omar (2002):
+    Vintage Human Capital, Demographic Trends, and Endogenous Growth.
+    In Journal of Economic Theory 104 (2), pp. 340–375.
+    DOI: 10.1006/jeth.2001.2854.
+
+
 *************************************************************/
 
 #if !defined( LSD_GIS )
-  #error The LSD population module is intended to work with LSD_GIS by Frederik Schaff.
+#error The LSD population module is intended to work with LSD_GIS by Frederik Schaff.
 #endif
 
 #ifndef MODULE_POPULATION //GUARD
-  #define MODULE_POPULATION
+#define MODULE_POPULATION
 #endif
 
 const bool TEST_POP_MODULE = false; //switch for testing
@@ -46,12 +46,12 @@ const bool TEST_POP_MODULE = false; //switch for testing
 
 
 /*****
- *  MACROS
- *  Some macros for easy access in standard LSD manner.
- *
+    MACROS
+    Some macros for easy access in standard LSD manner.
+
  ******/
 
-pop_map *population; //create global pop_map;
+pop_map* population; //create global pop_map;
 
 #define INIT_POPULATION_MODULE(model, t_start,  ... ) { population = new pop_map(model, t_start, __VA_ARGS__ ); }
 //to do: Change to VARGS stuff.
@@ -67,10 +67,10 @@ pop_map *population; //create global pop_map;
     if (!obj->is_unique()) { obj->declare_as_unique( obj->label ); } \
     population->add_person(  obj, obj_f, obj_m); \
   }
-#define POP_ADD_PERSON_WPARENT( obj_f, obj_m ) POP_ADD_PERSON_PARENTS(p, obj_f, obj_m )
+#define POP_ADD_PERSON_WPARENT( obj_f, obj_m ) POP_ADD_PERSON_WPARENTS(p, obj_f, obj_m )
 
-#define POP_ADD_PERSONS(obj) POP_ADD_PERSON_PARENTS( obj, NULL, NULL)
-#define POP_ADD_PERSON       POP_ADD_PERSON_PARENTS( p, NULL, NULL)
+#define POP_ADD_PERSONS(obj) POP_ADD_PERSON_WPARENTS( obj, NULL, NULL)
+#define POP_ADD_PERSON       POP_ADD_PERSON_WPARENTS( p, NULL, NULL)
 
 #define POP_DIE_PERSONS( obj ) { population->person_dies( obj ); }
 #define POP_DIE_PERSON         { population->person_dies( p ); }
@@ -106,14 +106,17 @@ pop_map *population; //create global pop_map;
 #define POP_CYCLE_CHILDRENS( obj ) for(object* c_child = population->first_child_of(obj); c_child != NULL; c_child = population->next_child_of(obj))
 
 #define POP_INFO           { plog(population->person_info(p).c_str()); }
-#define POP_INFOS( obj )   { population->person_info( obj ).c_str(); }
+#define POP_INFOS( obj )   { plog(population->person_info( obj ).c_str()); }
 
 
 //Return random agents alive and with gender as specified
 
-#define POP_RANDOM_PERSON(min_age, max_age)  ( population->random_person(-1, min_age, max_age))
-#define POP_RANDOM_PERSONF(min_age, max_age) ( population->random_person(1, min_age, max_age) )
-#define POP_RANDOM_PERSONM(min_age, max_age) ( population->random_person(0, min_age, max_age) )
+#define POP_RANDOM_PERSON(gender, min_age, max_age)  ( population->random_person(gender, min_age, max_age) )
+
+#define POP_CYCLE_PERSON(obj, gender, min_age, max_age) \
+    auto selection = pop_selection(population, gender, min_age, max_age); \
+    for(obj = selection.first(); obj != NULL; obj = selection.next()) {
+
 
 #define POP_FAMILY_DEGREE( obj1, obj2 )  ( population->family_degree( obj1, obj2, -5) )
 #define POP_CHECK_INCEST( obj1, obj2, prohibDegree ) ( population->check_if_incest( obj1, obj2, prohibDegree )  )
@@ -127,10 +130,10 @@ pop_map *population; //create global pop_map;
 #ifdef PAJEKFROMCPP
 //to do: Make class-dependent
 //Add "child" relation
-  //Cycle through all agents, alive or dead, and add them to the network.
-  //Then cycle through all again and add links to children.
-  //use as y the time of birth, as x the # at birth
-  #define PAJEK_POP_LINEAGE_SAVE \
+//Cycle through all agents, alive or dead, and add them to the network.
+//Then cycle through all again and add links to children.
+//use as y the time of birth, as x the # at birth
+#define PAJEK_POP_LINEAGE_SAVE \
     if (population != NULL && population->n_persons() > 0){ \
     PAJ_STATIC("Pajek","POP_MODEL",RND_SEED,"Lineage"); \
     int x = 0;     \
@@ -153,5 +156,5 @@ pop_map *population; //create global pop_map;
     }
 
 #else
-  #define PAJEK_POP_LINEAGE_SAVE
+#define PAJEK_POP_LINEAGE_SAVE
 #endif
