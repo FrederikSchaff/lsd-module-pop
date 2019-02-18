@@ -184,6 +184,9 @@ class pop_map {
         double t_now; //starting time
         double t_unit; //interval size for time
         double femaleRatio; //chance to be female
+        
+        enum kinship_system {Language, Civil, Canon, Collateral}; //more can be added.        
+        kinship_system ks = Civil;
 
         std::map< int, pop_person > persons;  //all agent information, alive or dead, sorted by their unique ID
         //to do: this is rather slow as it seems. The reason is
@@ -232,6 +235,10 @@ class pop_map {
         ~pop_map()
         {
             delete model;
+        }
+        
+        void set_kinship_system( kinship_system _ks ){
+            ks = _ks;
         }
 
         double const_pop_fert(double n) //equilibrium fertility rate for pop of size n.

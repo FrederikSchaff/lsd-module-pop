@@ -328,32 +328,39 @@ std::string pop_map::person_info(object* uID)
 std::string pop_map::person_info(int uID)
 {
     std::string buffer =  "\nPOP PERSON INFO:";
-    pop_person const& POI= persons.at(uID);
+    pop_person const& POI = persons.at(uID);
     object* oPOI = root->obj_by_unique_id(uID);
     buffer += " uID: "      + std::to_string(POI.uID);
-    buffer += ", Status: "   + std::string(POI.alive ? "alive" : "dead");    
+    buffer += ", Status: "   + std::string(POI.alive ? "alive" : "dead");
     buffer += ", gender: ";
     buffer += ( (POI.gender == 'f') ? "female" : "male");
     buffer += ", age: "      + std::to_string(POI.age);
     buffer += ", age of death: "  + std::to_string(POI.d_age);
     buffer += ", mother: "   + std::to_string(POI.m_uID);
     buffer += ", father: "   + std::to_string(POI.f_uID);
-    
+
     if (ANY_GISS(oPOI))
         buffer += oPOI->gis_info();
     return buffer;
 }
 
 
-/*  a function that returns the family degree, defined as follows:
-    -1 - flag error.
+/*  a function that returns the family degree, defined by the kinship_system used.
+    see https://umanitoba.ca/faculties/arts/anthropology/tutor/descent/cognatic/degree.html for infos.
+
+    retunrs the degree of kinship according to the given system.
+    a return value of -1 - flags no testing necessary. -2 is an error.
+
+    In addition to Civil, Canon and Collateral, "Language" refers to the following degrees:
 
     0 - none of the below/tested ones
-    1 - siblings
-    2 - parent-child
+    1 - parent-child
+    2 - siblings
     3 - grandchild-grandparent
     4 - nephew - uncle/aunt
     5 - cousin - cousin
+
+    Implementation: Problem specific
 */
 int pop_map::family_degree(object* m_uID, object* f_uID, int max_tested_degree)
 {
@@ -362,19 +369,37 @@ int pop_map::family_degree(object* m_uID, object* f_uID, int max_tested_degree)
 
 int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
 {
-    bool verbose_logging = true;
+
+    if (max_tested_degree == 0) {
+        return -1;     //no testing
+    }
+
+    const bool verbose_logging = false;
 
     VERBOSE_MODE(verbose_logging) {
         PLOG("\nPopulation Model :   : ext_pop::check_if_incest : called with mother %i, father %i and max degree %i", m_uID, f_uID, max_tested_degree);
     }
 
-    if (max_tested_degree == -1) {
-        max_tested_degree = 5;   //test everything as default
+    const int max_testable_degree = 5; //Currently cousin relations are the most distant relation that is checked.
+
+    if( max_tested_degree > max_testable_degree ) {
+        char buffer[300];
+        sprintf( buffer, "failure in %s ", __func__ );
+        error_hard( buffer, "the maximum tested degree is higher than allowed",
+                    "check your code to prevent this situation" );
+        return -2;
     }
 
+    //Steps to lowest common ancestor (LCA)
+    int steps_m = -1; //flag that outside of checked distance.
+    int steps_f = -1;
+    int steps_Language = -1;
     int tested_degree = 0;
-    if (max_tested_degree == 0) {
-        return 0;     //check if at end
+    pop_person* c_mother = NULL; //default: no mother
+    pop_person* c_father = NULL;
+
+    if (max_tested_degree == -1 ) {
+        max_tested_degree = max_testable_degree;   //default max - we would need to expand this heuristic approach otherwise. This is based on the language definition.
     }
 
 
@@ -384,15 +409,13 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
         VERBOSE_MODE(verbose_logging) {
             PLOG("\nt .. full orphan");
         }
-        return 0; //full orphan
+        goto at_end; //full orphan
     }
 
     //set-up
-    pop_person* c_mother = NULL; //default: no mother
     if (m_uID >= 0) {
         c_mother = &persons.at(m_uID);
     }
-    pop_person* c_father = NULL;
     if (f_uID >= 0) {
         c_father = &persons.at(f_uID);
     }
@@ -400,47 +423,70 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
 
     //Start serious testing
 
+    //mother-son?
+    if (c_mother->f_uID != -1 && c_mother->f_uID == f_uID) {
+        steps_Language = 1;
+        steps_m = 1;
+        steps_f = 0;
+        goto at_end;
+    }
+
+    //father-daughter?
+    if ( c_father->m_uID != -1 && c_father->m_uID == m_uID) {
+        steps_Language = 1;
+        steps_m = 0;
+        steps_f = 1;
+        goto at_end;
+    }
+    VERBOSE_MODE(verbose_logging) {
+        PLOG("\n\t ... not parent-child");
+    }
+
+    tested_degree++;
+    if (max_tested_degree == tested_degree) {
+        goto at_end;
+    }
+
     //mother siblings
     if (c_mother->m_uID != -1 && c_mother->m_uID == c_father->m_uID) {
-        return 1;
+        steps_Language = 2;
+        steps_m = steps_f = 1;
+        goto at_end;
     }
     //father siblings
     if (c_mother->f_uID != -1 && c_mother->f_uID == c_father->f_uID) {
-        return 1;
+        steps_Language = 2;
+        steps_m = steps_f = 1;
+        goto at_end;
     }
     VERBOSE_MODE(verbose_logging) {
-        PLOG("\nt .. not siblings");
-    }
-    tested_degree++;
-    if (max_tested_degree == tested_degree) {
-        return 0;
+        PLOG(", nor siblings");
     }
 
-    //parent-child?
-    if ( (c_mother->f_uID != -1 && c_mother->f_uID == f_uID)
-            || (c_father->m_uID != -1 && c_father->m_uID == m_uID)
-       ) {
-        return 2;
-    }
-    VERBOSE_MODE(verbose_logging) {
-        PLOG(", nor parent-child");
-    }
     tested_degree++;
     if (max_tested_degree == tested_degree) {
-        return 0;
+        goto at_end;
     }
 
     //grandchild-grandparent?
-    if ( (/* grandchild-grandpas */
-                (c_mother->f_uID != -1 && persons.at(c_mother->f_uID).f_uID != -1 && persons.at(c_mother->f_uID).f_uID == f_uID)
-                || (c_mother->m_uID != -1 && persons.at(c_mother->m_uID).f_uID != -1 && persons.at(c_mother->m_uID).f_uID == f_uID)
-            ) ||
-            (/*grandson-grandmas */
-                (c_father->f_uID != -1 && persons.at(c_father->f_uID).m_uID != -1 && persons.at(c_father->f_uID).m_uID == m_uID)
-                || (c_father->m_uID != -1 && persons.at(c_father->m_uID).m_uID != -1 && persons.at(c_father->m_uID).m_uID == m_uID)
-            )
-       ) {
-        return 3;
+    if (/* grandchild-grandpas */
+        (c_mother->f_uID != -1 && persons.at(c_mother->f_uID).f_uID != -1 && persons.at(c_mother->f_uID).f_uID == f_uID)
+        || (c_mother->m_uID != -1 && persons.at(c_mother->m_uID).f_uID != -1 && persons.at(c_mother->m_uID).f_uID == f_uID)
+    ) {
+        steps_Language = 3;
+        steps_m = 2;
+        steps_f = 0;
+        goto at_end;
+    }
+
+    if (/*grandson-grandmas */
+        (c_father->f_uID != -1 && persons.at(c_father->f_uID).m_uID != -1 && persons.at(c_father->f_uID).m_uID == m_uID)
+        || (c_father->m_uID != -1 && persons.at(c_father->m_uID).m_uID != -1 && persons.at(c_father->m_uID).m_uID == m_uID)
+    ) {
+        steps_Language = 3;
+        steps_m = 0;
+        steps_f = 2;
+        goto at_end;
     }
 
     VERBOSE_MODE(verbose_logging) {
@@ -448,31 +494,38 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
     }
     tested_degree++;
     if (max_tested_degree == tested_degree) {
-        return 0;
+        goto at_end;
     }
 
     //Aunt/Uncle - Nephew
-    if ( (/*niece-uncles*/
-                (c_mother->f_uID != -1 && persons.at(c_mother->f_uID).f_uID != -1 && c_father->f_uID != -1 && c_father->f_uID == persons.at(c_mother->f_uID).f_uID)
-                ||  (c_mother->f_uID != -1 && persons.at(c_mother->f_uID).m_uID != -1 && c_father->m_uID != -1 && c_father->m_uID == persons.at(c_mother->f_uID).m_uID)
-                ||  (c_mother->m_uID != -1 && persons.at(c_mother->m_uID).f_uID != -1 && c_father->f_uID != -1 && c_father->f_uID == persons.at(c_mother->m_uID).f_uID)
-                ||  (c_mother->m_uID != -1 && persons.at(c_mother->m_uID).m_uID != -1 && c_father->m_uID != -1 && c_father->m_uID == persons.at(c_mother->m_uID).m_uID)
-            ) ||
-            (/*aunt-nephews*/
-                (c_mother->f_uID != -1 && c_father->f_uID != -1 && persons.at(c_father->f_uID).f_uID != -1 && c_mother->f_uID == persons.at(c_father->f_uID).f_uID)
-                ||  (c_mother->f_uID != -1 && c_father->m_uID != -1 && persons.at(c_father->m_uID).f_uID != -1 && c_mother->f_uID == persons.at(c_father->m_uID).f_uID)
-                ||  (c_mother->m_uID != -1 && c_father->f_uID != -1 && persons.at(c_father->f_uID).m_uID != -1 && c_mother->m_uID == persons.at(c_father->f_uID).m_uID)
-                ||  (c_mother->m_uID != -1 && c_father->m_uID != -1 && persons.at(c_father->m_uID).m_uID != -1 && c_mother->m_uID == persons.at(c_father->m_uID).m_uID)
-            )
-       ) {
-        return 4;
+    if (/*niece-uncles*/
+        (c_mother->f_uID != -1 && persons.at(c_mother->f_uID).f_uID != -1 && c_father->f_uID != -1 && c_father->f_uID == persons.at(c_mother->f_uID).f_uID)
+        ||  (c_mother->f_uID != -1 && persons.at(c_mother->f_uID).m_uID != -1 && c_father->m_uID != -1 && c_father->m_uID == persons.at(c_mother->f_uID).m_uID)
+        ||  (c_mother->m_uID != -1 && persons.at(c_mother->m_uID).f_uID != -1 && c_father->f_uID != -1 && c_father->f_uID == persons.at(c_mother->m_uID).f_uID)
+        ||  (c_mother->m_uID != -1 && persons.at(c_mother->m_uID).m_uID != -1 && c_father->m_uID != -1 && c_father->m_uID == persons.at(c_mother->m_uID).m_uID)
+    ) {
+        steps_Language = 4;
+        steps_m = 1;
+        steps_f = 2;
+        goto at_end;
+    }
+    if (/*aunt-nephews*/
+        (c_mother->f_uID != -1 && c_father->f_uID != -1 && persons.at(c_father->f_uID).f_uID != -1 && c_mother->f_uID == persons.at(c_father->f_uID).f_uID)
+        ||  (c_mother->f_uID != -1 && c_father->m_uID != -1 && persons.at(c_father->m_uID).f_uID != -1 && c_mother->f_uID == persons.at(c_father->m_uID).f_uID)
+        ||  (c_mother->m_uID != -1 && c_father->f_uID != -1 && persons.at(c_father->f_uID).m_uID != -1 && c_mother->m_uID == persons.at(c_father->f_uID).m_uID)
+        ||  (c_mother->m_uID != -1 && c_father->m_uID != -1 && persons.at(c_father->m_uID).m_uID != -1 && c_mother->m_uID == persons.at(c_father->m_uID).m_uID)
+    ) {
+        steps_Language = 4;
+        steps_m = 2;
+        steps_f = 1;
+        goto at_end;
     }
     VERBOSE_MODE(verbose_logging) {
         PLOG(", nor aunt/uncle-niece/nephew");
     }
     tested_degree++;
     if (max_tested_degree == tested_degree) {
-        return 0;
+        goto at_end;
     }
 
     //Cousins
@@ -490,25 +543,45 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
             ||  (c_mother->m_uID != -1 && persons.at(c_mother->m_uID).m_uID != -1 && c_father->m_uID != -1 && persons.at(c_father->m_uID).m_uID != -1 && persons.at(c_father->m_uID).m_uID == persons.at(c_mother->m_uID).m_uID)
         )
     ) {
-        return 5;
+        steps_Language = 5;
+        steps_m = steps_f = 2;
+        goto at_end;
     }
     VERBOSE_MODE(verbose_logging) {
         PLOG(", nor cousins");
     }
     tested_degree++;
     if (max_tested_degree == tested_degree) {
-        return 0;
+        goto at_end;
     }
 
-    //lesser degree
-    return 0;
+at_end: //label that at end
+
+    if (steps_m == -1) {
+        return 0; //not related within given distance
+    }
+    else {
+        switch (ks) {
+            case Language:
+                return steps_Language;
+            case Civil:
+                return steps_f + steps_m;
+
+            case Canon:
+                return max(steps_f, steps_m);
+
+            case Collateral:
+                return min(steps_f, steps_m);
+        }
+    }
 }
 
 // Check the family degree of the relationship
 //Check if there is potential of incest with given "degree" - only direct biology.
-// allowed degree: 0 - incest allowed, 1 - siblings, 2 - also parent-child, 3 - also grandchild-grandparent, 4 - also nephew - uncle/aunt, 5 - also cousin - cousin.
+// allowed degree: 0 - not checked, 
+// in "Language" system: 1 - parent-child, 2 - also siblings,   3 - also grandchild-grandparent, 4 - also nephew - uncle/aunt, 5 - also cousin - cousin.
 // we compare be-directional, to also catch if a mother would have a child with a (grand)child.
-//returns true if there is incest
+// returns true if there is incest
 bool pop_map::check_if_incest(object* m_uID, object* f_uID, int prohibited_degree)
 {
     return check_if_incest(m_uID->unique_id(), f_uID->unique_id(), prohibited_degree);
@@ -516,7 +589,7 @@ bool pop_map::check_if_incest(object* m_uID, object* f_uID, int prohibited_degre
 
 bool pop_map::check_if_incest(int m_uID, int f_uID, int prohibited_degree)
 {
-    bool verbose_logging = true;
+    const bool verbose_logging = false;
     if (prohibited_degree == 0) {
         return false; //no prohibited incest.
     }
@@ -531,10 +604,10 @@ bool pop_map::check_if_incest(int m_uID, int f_uID, int prohibited_degree)
                     PLOG("\n\t... No relevant family relation. ERROR this should not happen.");
                     break;
                 case 1:
-                    PLOG("\n\t... siblings.");
+                    PLOG("\n\t... parent-child.");
                     break;
                 case 2:
-                    PLOG("\n\t... parent-child.");
+                    PLOG("\n\t... siblings.");
                     break;
                 case 3:
                     PLOG("\n\t... grandchild-grandparent.");
@@ -547,7 +620,6 @@ bool pop_map::check_if_incest(int m_uID, int f_uID, int prohibited_degree)
                     break;
             }
         }
-
         return true; //incest
     }
     else {

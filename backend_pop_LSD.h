@@ -118,8 +118,8 @@ pop_map* population; //create global pop_map;
     for(obj = selection.first(); obj != NULL; obj = selection.next()) {
 
 
-#define POP_FAMILY_DEGREE( obj1, obj2 )  ( population->family_degree( obj1, obj2, -5) )
-#define POP_CHECK_INCEST( obj1, obj2, prohibDegree ) ( population->check_if_incest( obj1, obj2, prohibDegree )  )
+#define POP_FAMILY_DEGREE( obj1, obj2 )  ( (obj1 != NULL && obj2 != NULL) ? (population->family_degree( obj1, obj2, -5) ) : -1.0 )
+#define POP_CHECK_INCEST( obj1, obj2, prohibDegree ) ( (obj1 != NULL && obj2 != NULL) ? ( population->check_if_incest( obj1, obj2, prohibDegree )  ) : false )
 
 #define POP_SIZE ( double( population->n_persons_alive() ) )
 
