@@ -47,9 +47,34 @@ void pop_map::add_person(object* uID, object* f_uID, object* m_uID)
 
 void pop_map::add_person(int uID, int f_uID, int m_uID)
 {
+    //Make sure that female is mother and vv
+    if (f_uID > 0){
+        if (persons.at(f_uID).gender!='m'){
+            char buffer[300];
+            sprintf( buffer, "failure in %s", __func__ );
+            error_hard( buffer, "the father should be male but is not",
+                    "check your code to prevent this situation" );
+            return;
+        }
+    }
+    if (m_uID > 0){
+        if (persons.at(m_uID).gender!='f'){
+            char buffer[300];
+            sprintf( buffer, "failure in %s", __func__ );
+            error_hard( buffer, "the mother should be male but is not",
+                    "check your code to prevent this situation" );
+            return;
+        }
+    }
+    
+        
     bool female = RND < femaleRatio ? true : false;
     const double age = 0.0;
     const double& t_birth = t_now;
+    if (f_uID > 0)
+        add_child(f_uID, uID);
+    if (m_uID > 0)
+        add_child(m_uID, uID);       
     persons.emplace_hint(persons.end(), uID, pop_person(uID, f_uID, m_uID, (true == female ? 'f' : 'm'), t_birth, age, model->age_of_death() ) );
     ++n_alive;
     if (true == female)
@@ -61,11 +86,7 @@ void pop_map::add_person(int uID, int f_uID, int m_uID)
         char test_msg[300];
         sprintf(test_msg, "\ncalled add_person(). Added person with ID %i, father %i, mother %i, age %g, death age %c, gender %c", persons.at(uID).uID, persons.at(uID).f_uID, persons.at(uID).m_uID, persons.at(uID).age, persons.at(uID).d_age, persons.at(uID).gender);
         plog(test_msg);
-    }
-    if (f_uID > 0)
-        add_child(f_uID, uID);
-    if (m_uID > 0)
-        add_child(m_uID, uID);
+    }    
 }
 
 char pop_map::advance_age_or_die(int uID)
@@ -314,9 +335,9 @@ object* pop_selection::next()
         return root->obj_by_unique_id(it_selection->second);
 }
 
-object* pop_map::random_person(char gender, double age_low, double age_high )
+object* pop_map::random_person(char gender, double age_low, double age_high, object* fake_caller, int lag,  char varLab[], char condition, double condVal, bool random)
 {
-    return  pop_selection(this, gender, age_low, age_high).first();
+    return  pop_selection(this, gender, age_low, age_high, fake_caller, lag, varLab, condition, condVal, random).first();
 }
 
 

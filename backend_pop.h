@@ -284,7 +284,7 @@ class pop_map {
         bool is_alive(object* uID);
         int nchildren(object* uID);
 
-        object* random_person(char gender, double age_low, double age_high );
+        object* random_person(char gender, double age_low, double age_high, object* fake_caller=NULL, int lag=0,  char varLab[]="", char condition='0', double condVal = 0.0, bool random = true);
 
         friend struct pop_selection; //functor to select some elements.
 
@@ -323,39 +323,118 @@ struct pop_selection {
     object* next();
 
 
-    pop_selection( pop_map* map, char gender, double age_low, double age_high, bool random = true)
+    pop_selection( pop_map* map, char gender, double age_low, double age_high, object* fake_caller=NULL, int lag=0,  char varLab[]="", char condition='0', double condVal = 0.0, bool random = true)
         : map(map), gender(gender), age_low(age_low), age_high(age_high)
-    {
+    {        
+        const bool has_condition = (condition == '>' || condition == '<' || condition == '=' || condition == '!' );
         if (age_low != -1 && age_high != -1 && age_low > age_high)
             error_hard( "Error in 'pop_selection()'", "age_low > age_high",
                 "Check your code to prevent this situation." );
         double birth_low = age_high > 0 ? map->t_now - age_high : 0;
         double birth_high = age_low > 0 ? map->t_now - age_low : map->t_now;
-        int track = 0;
+        // int track = 0;
         if (gender != 'f') { //add males
             auto const& it_start = (birth_low < 0) ? map->males_by_birth.begin() : map->males_by_birth.lower_bound(birth_low);
             auto const& it_stop = (birth_high < 0) ? map->males_by_birth.end() : map->males_by_birth.upper_bound(birth_high);
             for (auto it_temp = it_start; it_temp != it_stop; it_temp++) {
+                //check condition, if necessary
+                if (has_condition) {
+                    object* this_obj = root->obj_by_unique_id(it_temp->second);
+                    variable* condVar = this_obj->search_var_local(varLab);
+                    bool meetsCondition = false;
+                    if (condVar == NULL) {
+                        char buffer[300];
+                        sprintf( buffer, "'%s' is missing for conditional searching in %s in population module", varLab, __func__ );
+                        error_hard( buffer, "variable or parameter not found",
+                                    "check your code to prevent this situation" );
+                        return;
+                    }
+
+                    double val;
+                    if (fake_caller == NULL)
+                        val = condVar->cal(this_obj, lag);
+                    else
+                        val = condVar->cal(fake_caller, lag);
+
+                    switch (condition) {
+                        case '=':
+                            meetsCondition = ( val == condVal ? true : false );
+                            break;
+                        case '>':
+                            meetsCondition = ( val > condVal ? true : false );
+                            break;
+                        case '<':
+                            meetsCondition = ( val < condVal ? true : false );
+                            break;
+                        case '!':
+                            meetsCondition = ( val != condVal ? true : false );
+                            break;
+                        default :
+                            meetsCondition = false;
+                    }
+                    if (false == meetsCondition)
+                        continue; //skip this item
+                }//end conditional
+                
                 selection.emplace_back(RND, it_temp->second);
-                if (++track > 10000) {
-                    error_hard( "Error in 'pop_selection()'", "f",
-                                "contact the developer." );
-                }
+                // if (++track > 10000) {
+                    // error_hard( "Error in 'pop_selection()'", "f",
+                                // "contact the developer." );
+                // }
             }
         }
-        track = 0;
+        // track = 0;
         if (gender != 'm') { //add females
             auto const& it_start = (birth_low < 0) ? map->females_by_birth.begin() : map->females_by_birth.lower_bound(birth_low);
             auto const& it_stop = (birth_high < 0) ? map->females_by_birth.end() : map->females_by_birth.upper_bound(birth_high);
             for (auto it_temp = it_start; it_temp != it_stop; it_temp++) {
+                //check condition, if necessary
+                if (has_condition) {                                       
+                    object* this_obj = root->obj_by_unique_id(it_temp->second);
+                    variable* condVar = this_obj->search_var_local(varLab);
+                    bool meetsCondition = false;
+                    if (condVar == NULL) {
+                        char buffer[300];
+                        sprintf( buffer, "'%s' is missing for conditional searching in %s in population module", varLab, __func__ );
+                        error_hard( buffer, "variable or parameter not found",
+                                    "check your code to prevent this situation" );
+                        return;
+                    }
+
+                    double val;
+                    if (fake_caller == NULL)
+                        val = condVar->cal(this_obj, lag);
+                    else
+                        val = condVar->cal(fake_caller, lag);
+
+                    switch (condition) {
+                        case '=':
+                            meetsCondition = ( val == condVal ? true : false );
+                            break;
+                        case '>':
+                            meetsCondition = ( val > condVal ? true : false );
+                            break;
+                        case '<':
+                            meetsCondition = ( val < condVal ? true : false );
+                            break;
+                        case '!':
+                            meetsCondition = ( val != condVal ? true : false );
+                            break;
+                        default :
+                            meetsCondition = false;
+                    }
+                    if (false == meetsCondition)
+                        continue; //skip this item
+                }//end conditional                
+                
                 selection.emplace_back(RND, it_temp->second);
-                if (++track > 10000) {
-                    char buffer[300];
-                    sprintf(buffer, "\nid at it_start: %i; and at it_stop: %i. Age low(birth_high): %g (%g), age high(birth_low): %g(%g)", it_start->second, (it_stop)->second, age_low, birth_high, age_high, birth_low);
-                    plog(buffer);
-                    error_hard( "Error in 'pop_selection()'", "m",
-                                "contact the developer." );
-                }
+                // if (++track > 10000) {
+                    // char buffer[300];
+                    // sprintf(buffer, "\nid at it_start: %i; and at it_stop: %i. Age low(birth_high): %g (%g), age high(birth_low): %g(%g)", it_start->second, (it_stop)->second, age_low, birth_high, age_high, birth_low);
+                    // plog(buffer);
+                    // error_hard( "Error in 'pop_selection()'", "m",
+                                // "contact the developer." );
+                // }
             }
         }
         //randomise

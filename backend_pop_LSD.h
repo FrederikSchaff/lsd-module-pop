@@ -105,20 +105,28 @@ pop_map* population; //create global pop_map;
 #define POP_CYCLE_CHILDREN  for(object* c_child = population->first_child_of(p); c_child != NULL; c_child = population->next_child_of(p))
 #define POP_CYCLE_CHILDRENS( obj ) for(object* c_child = population->first_child_of(obj); c_child != NULL; c_child = population->next_child_of(obj))
 
-#define POP_INFO           { plog(population->person_info(p).c_str()); }
-#define POP_INFOS( obj )   { plog(population->person_info( obj ).c_str()); }
+#define POP_INFO           ( population->person_info(p).c_str() )
+#define POP_INFOS( obj )   ( population->person_info( obj ).c_str() )
 
 
 //Return random agents alive and with gender as specified
 
 #define POP_RANDOM_PERSON(gender, min_age, max_age)  ( population->random_person(gender, min_age, max_age) )
 
+#define POP_RANDOM_PERSON_CND(gender, min_age, max_age, varLab, condition, condVal)  ( population->random_person(gender, min_age, max_age, /*fake_caller*/ NULL, /*lag*/ 0,  varLab, condition, condVal, true) )
+#define POP_RANDOM_PERSON_CNDL(gender, min_age, max_age, lag, varLab, condition, condVal)  ( population->random_person(gender, min_age, max_age, /*fake_caller*/ NULL, lag,  varLab, condition, condVal, true) )
+
+#define POP_RANDOM_PERSON_CND_CHEAT(gender, min_age, max_age, fake_caller, varLab, condition, condVal)  ( population->random_person(gender, min_age, max_age, fake_caller, /*lag*/ 0,  varLab, condition, condVal, true) )
+#define POP_RANDOM_PERSON_CND_CHEATL(gender, min_age, max_age, fake_caller, lag, varLab, condition, condVal)  ( population->random_person(gender, min_age, max_age, fake_caller, lag,  varLab, condition, condVal, true) )
+
+
+
 #define POP_CYCLE_PERSON(obj, gender, min_age, max_age) \
     auto selection = pop_selection(population, gender, min_age, max_age); \
     for(obj = selection.first(); obj != NULL; obj = selection.next()) {
 
 
-#define POP_FAMILY_DEGREE( obj1, obj2 )  ( (obj1 != NULL && obj2 != NULL) ? (population->family_degree( obj1, obj2, -5) ) : -1.0 )
+#define POP_FAMILY_DEGREE( obj1, obj2 )  ( (obj1 != NULL && obj2 != NULL) ? (population->family_degree( obj1, obj2, -1) ) : -1.0 )
 #define POP_CHECK_INCEST( obj1, obj2, prohibDegree ) ( (obj1 != NULL && obj2 != NULL) ? ( population->check_if_incest( obj1, obj2, prohibDegree )  ) : false )
 
 #define POP_SIZE ( double( population->n_persons_alive() ) )
