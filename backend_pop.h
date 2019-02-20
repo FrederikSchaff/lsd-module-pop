@@ -210,7 +210,7 @@ class pop_map {
         object* first_child_of(int uID);
         object* next_child_of(int uID);
         object* alive_last_mgenitor(int uID); //get alive father of last child. If the father of the last child is dead, return NULL.
-
+        double time_of_last_delivery(int uID);
 
 
         double age_of(int uID);
@@ -275,6 +275,7 @@ class pop_map {
         object* first_child_of(object* uID);
         object* next_child_of(object* uID);
         object* alive_last_mgenitor(object* uID); //get alive father of last child. If the father of the last child is dead, return NULL.
+        double time_of_last_delivery(object* uID);
 
         object* random_person();
 
@@ -453,6 +454,7 @@ struct pop_person {
     int m_uID; //mother
     char gender; //0
     double t_birth; //time of birth
+    double t_delivery; //time of last delivery of a child
     double age; //current age
     double d_age; //death age
     pop_children children; //functor to cycle through children
@@ -460,5 +462,5 @@ struct pop_person {
     //constructor
     pop_person(int uID, int f_uID, int m_uID, char gender, double t_birth, double age, double d_age) :
         alive(true), uID(uID), f_uID(f_uID), m_uID(m_uID), gender(gender), t_birth(t_birth), age(age), d_age(d_age)
-    { }
+    { t_delivery = 0.0; }
 };

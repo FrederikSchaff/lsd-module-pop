@@ -99,6 +99,9 @@ pop_map* population; //create global pop_map;
 #define POP_MGENITOR         ( population->alive_last_mgenitor(p)   )
 #define POP_MGENITORS( obj ) ( population->alive_last_mgenitor(obj) )
 
+#define POP_LASTDELIVERY            ( population->time_of_last_delivery( p )  )
+#define POP_LASTDELIVERYS( obj )    ( population->time_of_last_delivery( obj ) )
+
 #define POP_NCHILDREN   ( population->nchildren(p) )
 #define POP_NCHILDRENS( obj )   ( population->nchildren( obj ) )
 
@@ -120,11 +123,26 @@ pop_map* population; //create global pop_map;
 #define POP_RANDOM_PERSON_CND_CHEATL(gender, min_age, max_age, fake_caller, lag, varLab, condition, condVal)  ( population->random_person(gender, min_age, max_age, fake_caller, lag,  varLab, condition, condVal, true) )
 
 
-
-#define POP_CYCLE_PERSON(obj, gender, min_age, max_age) \
+//pop_selection(this, gender, age_low, age_high, fake_caller, lag, varLab, condition, condVal, random).first();
+#define POP_RCYCLE_PERSON(obj, gender, min_age, max_age) \
     auto selection = pop_selection(population, gender, min_age, max_age); \
-    for(obj = selection.first(); obj != NULL; obj = selection.next()) {
+    for(obj = selection.first(); obj != NULL; obj = selection.next())
+        
+#define POP_RCYCLE_PERSON_CND(obj, gender, min_age, max_age, varLab, condition, condVal) \
+    auto selection = pop_selection(population, gender, min_age, max_age, /*fake_caller*/ NULL, /*lag*/ 0,  varLab, condition, condVal, true); \
+    for(obj = selection.first(); obj != NULL; obj = selection.next())    
 
+#define POP_RCYCLE_PERSON_CNDL(obj, gender, min_age, max_age, lag, varLab, condition, condVal) \
+    auto selection = pop_selection(population, gender, min_age, max_age, /*fake_caller*/ NULL, lag,  varLab, condition, condVal, true); \
+    for(obj = selection.first(); obj != NULL; obj = selection.next()) 
+        
+#define POP_RCYCLE_PERSON_CND_CHEAT(obj, gender, min_age, max_age, fake_caller, varLab, condition, condVal) \
+    auto selection = pop_selection(population, gender, min_age, max_age, fake_caller, /*lag*/ 0,  varLab, condition, condVal, true); \
+    for(obj = selection.first(); obj != NULL; obj = selection.next())     
+        
+#define POP_RCYCLE_PERSON_CND_CHEATL(obj, gender, min_age, max_age, fake_caller, lag, varLab, condition, condVal) \
+    auto selection = pop_selection(population, gender, min_age, max_age, fake_caller, lag,  varLab, condition, condVal, true); \
+    for(obj = selection.first(); obj != NULL; obj = selection.next())     
 
 #define POP_FAMILY_DEGREE( obj1, obj2 )  ( (obj1 != NULL && obj2 != NULL) ? (population->family_degree( obj1, obj2, -1) ) : -1.0 )
 #define POP_CHECK_INCEST( obj1, obj2, prohibDegree ) ( (obj1 != NULL && obj2 != NULL) ? ( population->check_if_incest( obj1, obj2, prohibDegree )  ) : false )

@@ -196,6 +196,7 @@ void pop_map::person_set_d_age(int uID, double d_age)
 void pop_map::add_child(int uID, int c_uID)
 {
     persons.at(uID).children.c_uIDs.push_back(c_uID);
+    persons.at(uID).t_delivery = persons.at(uID).t_birth + persons.at(uID).age;
 }
 
 object* pop_map::mother_of(object* uID)
@@ -275,6 +276,17 @@ object* pop_map::alive_last_mgenitor(int uID)
             }
         }
     }
+}
+
+//get alive father of last child. If the father of the last child is dead, return NULL.
+double pop_map::time_of_last_delivery(object* uID)
+{
+    return time_of_last_delivery(uID->unique_id());
+}
+
+double pop_map::time_of_last_delivery(int uID)
+{
+    return persons.at(uID).t_delivery;
 }
 
 double pop_map::age_of(object* uID)
