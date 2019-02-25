@@ -30,6 +30,26 @@
 
 *************************************************************/
 
+void pop_map::set_kinship_system( const char _ks[] )  //Civil, Canon, Collateral
+{
+    if ( 0 == strcmp( _ks, "Language") ) {
+    ks = Language;
+}
+else if ( 0 == strcmp( _ks, "Civil") ) {
+    ks = Civil;
+}
+else if ( 0 == strcmp( _ks, "Canon") ) {
+    ks = Canon;
+}
+else if ( 0 == strcmp( _ks, "Collateral") ) {
+    ks = Collateral;
+}
+else {
+    error_hard( "failure in set_kinship_system()", "the selected system is not an option",
+                "check your code to prevent this situation, options are: Language, Civil, Canon or Collateral" );
+    }
+}
+
 int pop_map::nchildren(object* uID)
 {
     return nchildren( uID->unique_id() );
@@ -40,6 +60,14 @@ int pop_map::nchildren(int uID)
     return int(persons.at(uID).children.c_uIDs.size() );
 }
 
+const int pop_map::check_if_person(const int uID){
+    if ( persons.end() == persons.find(uID) ){
+        return -1; //does not exist
+    } else {
+        return uID;
+    }
+}
+
 void pop_map::add_person(object* uID, object* f_uID, object* m_uID)
 {
     add_person(uID->unique_id(), f_uID != NULL ? f_uID->unique_id() : -1, m_uID != NULL ? m_uID->unique_id() : -1);
@@ -47,34 +75,47 @@ void pop_map::add_person(object* uID, object* f_uID, object* m_uID)
 
 void pop_map::add_person(int uID, int f_uID, int m_uID)
 {
-    //Make sure that female is mother and vv
-    if (f_uID > 0){
-        if (persons.at(f_uID).gender!='m'){
+    //Make sure that female is mother and vv    
+    
+    if (f_uID > -1) {
+        if (check_if_person(f_uID) != f_uID){
+            char buffer[300];
+            sprintf( buffer, "failure in %s ", __func__ );
+            error_hard( buffer, "the first passed uID is not a person",
+                    "check your code to prevent this situation" );
+        }
+        if (persons.at(f_uID).gender != 'm') {
             char buffer[300];
             sprintf( buffer, "failure in %s", __func__ );
             error_hard( buffer, "the father should be male but is not",
-                    "check your code to prevent this situation" );
+                        "check your code to prevent this situation" );
             return;
         }
     }
-    if (m_uID > 0){
-        if (persons.at(m_uID).gender!='f'){
+    if (m_uID > -1) {
+        if (check_if_person(m_uID) != m_uID){
+            char buffer[300];
+            sprintf( buffer, "failure in %s ", __func__ );
+            error_hard( buffer, "the second passed uID is not a person",
+                    "check your code to prevent this situation" );
+        }
+        if (persons.at(m_uID).gender != 'f') {
             char buffer[300];
             sprintf( buffer, "failure in %s", __func__ );
             error_hard( buffer, "the mother should be male but is not",
-                    "check your code to prevent this situation" );
+                        "check your code to prevent this situation" );
             return;
         }
     }
-    
-        
+
+
     bool female = RND < femaleRatio ? true : false;
     const double age = 0.0;
     const double& t_birth = t_now;
-    if (f_uID > 0)
+    if (f_uID > -1)
         add_child(f_uID, uID);
-    if (m_uID > 0)
-        add_child(m_uID, uID);       
+    if (m_uID > -1)
+        add_child(m_uID, uID);
     persons.emplace_hint(persons.end(), uID, pop_person(uID, f_uID, m_uID, (true == female ? 'f' : 'm'), t_birth, age, model->age_of_death() ) );
     ++n_alive;
     if (true == female)
@@ -86,7 +127,7 @@ void pop_map::add_person(int uID, int f_uID, int m_uID)
         char test_msg[300];
         sprintf(test_msg, "\ncalled add_person(). Added person with ID %i, father %i, mother %i, age %g, death age %c, gender %c", persons.at(uID).uID, persons.at(uID).f_uID, persons.at(uID).m_uID, persons.at(uID).age, persons.at(uID).d_age, persons.at(uID).gender);
         plog(test_msg);
-    }    
+    }
 }
 
 char pop_map::advance_age_or_die(int uID)
@@ -207,7 +248,7 @@ object* pop_map::mother_of(object* uID)
 object* pop_map::mother_of(int uID)
 {
     int m_uID = persons.at(uID).m_uID;
-    if (m_uID > 0)
+    if (m_uID > -1)
         return root->obj_by_unique_id( m_uID );
     return NULL; //no father case
 }
@@ -220,7 +261,7 @@ object* pop_map::father_of(object* uID)
 object* pop_map::father_of(int uID)
 {
     int f_uID = persons.at(uID).f_uID;
-    if (f_uID > 0)
+    if (f_uID > -1)
         return root->obj_by_unique_id( f_uID );
     return NULL; //no father case
 }
@@ -400,6 +441,7 @@ int pop_map::family_degree(object* m_uID, object* f_uID, int max_tested_degree)
     return family_degree(m_uID->unique_id(), f_uID->unique_id(), max_tested_degree);
 }
 
+//Test degree between to persons, potential "mother" and potential "father" (or otherwise)
 int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
 {
 
@@ -407,13 +449,13 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
         return -1;     //no testing
     }
 
-    const bool verbose_logging = false;
+    const bool verbose_logging = true;
 
     VERBOSE_MODE(verbose_logging) {
-        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : called with mother %i, father %i and max degree %i", m_uID, f_uID, max_tested_degree);
+        LOG("\nPopulation Model :   : ext_pop::check_if_incest : called with mother %i, father %i and max degree %i", m_uID, f_uID, max_tested_degree);
     }
 
-    const int max_testable_degree = 5; //Currently cousin relations are the most distant relation that is checked.
+    const int max_testable_degree = 5; //in Language System. Currently cousin relations are the most distant relation that is checked.
 
     if( max_tested_degree > max_testable_degree ) {
         char buffer[300];
@@ -431,7 +473,7 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
     pop_person* c_mother = NULL; //default: no mother
     pop_person* c_father = NULL;
 
-    if (max_tested_degree == -1 ) {
+    if ( -1 == max_tested_degree) {
         max_tested_degree = max_testable_degree;   //default max - we would need to expand this heuristic approach otherwise. This is based on the language definition.
     }
 
@@ -440,16 +482,16 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
     if (m_uID < 0 && f_uID < 0) { //no parents
 
         VERBOSE_MODE(verbose_logging) {
-            PLOG("\nt .. full orphan");
+            LOG("\nt .. full orphan");
         }
         goto at_end; //full orphan
     }
 
     //set-up
-    if (m_uID >= 0) {
+    if (m_uID > -1) {
         c_mother = &persons.at(m_uID);
     }
-    if (f_uID >= 0) {
+    if (f_uID > -1) {
         c_father = &persons.at(f_uID);
     }
 
@@ -471,8 +513,9 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
         steps_f = 1;
         goto at_end;
     }
+    
     VERBOSE_MODE(verbose_logging) {
-        PLOG("\n\t ... not parent-child");
+        LOG("\n\t ... not parent-child");
     }
 
     tested_degree++;
@@ -492,8 +535,9 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
         steps_m = steps_f = 1;
         goto at_end;
     }
+    
     VERBOSE_MODE(verbose_logging) {
-        PLOG(", nor siblings");
+        LOG(", nor siblings");
     }
 
     tested_degree++;
@@ -523,7 +567,7 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
     }
 
     VERBOSE_MODE(verbose_logging) {
-        PLOG(", nor grandchild-grandparent");
+        LOG(", nor grandchild-grandparent");
     }
     tested_degree++;
     if (max_tested_degree == tested_degree) {
@@ -554,7 +598,7 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
         goto at_end;
     }
     VERBOSE_MODE(verbose_logging) {
-        PLOG(", nor aunt/uncle-niece/nephew");
+        LOG(", nor aunt/uncle-niece/nephew");
     }
     tested_degree++;
     if (max_tested_degree == tested_degree) {
@@ -581,7 +625,7 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
         goto at_end;
     }
     VERBOSE_MODE(verbose_logging) {
-        PLOG(", nor cousins");
+        LOG(", nor cousins");
     }
     tested_degree++;
     if (max_tested_degree == tested_degree) {
@@ -611,7 +655,7 @@ at_end: //label that at end
 
 // Check the family degree of the relationship
 //Check if there is potential of incest with given "degree" - only direct biology.
-// allowed degree: 0 - not checked, 
+// allowed degree: 0 - not checked,
 // in "Language" system: 1 - parent-child, 2 - also siblings,   3 - also grandchild-grandparent, 4 - also nephew - uncle/aunt, 5 - also cousin - cousin.
 // we compare be-directional, to also catch if a mother would have a child with a (grand)child.
 // returns true if there is incest
@@ -630,26 +674,26 @@ bool pop_map::check_if_incest(int m_uID, int f_uID, int prohibited_degree)
 
     if (kinship_degree >= prohibited_degree) {
         VERBOSE_MODE(verbose_logging) {
-            PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Maximum forbidden degree is %i", prohibited_degree);
+            LOG("\nPopulation Model :   : ext_pop::check_if_incest : Maximum forbidden degree is %i", prohibited_degree);
             switch (kinship_degree) {
 
                 case 0:
-                    PLOG("\n\t... No relevant family relation. ERROR this should not happen.");
+                    LOG("\n\t... No relevant family relation. ERROR this should not happen.");
                     break;
                 case 1:
-                    PLOG("\n\t... parent-child.");
+                    LOG("\n\t... parent-child.");
                     break;
                 case 2:
-                    PLOG("\n\t... siblings.");
+                    LOG("\n\t... siblings.");
                     break;
                 case 3:
-                    PLOG("\n\t... grandchild-grandparent.");
+                    LOG("\n\t... grandchild-grandparent.");
                     break;
                 case 4:
-                    PLOG("\n\t... nephew - uncle/aunt.");
+                    LOG("\n\t... nephew - uncle/aunt.");
                     break;
                 case 5:
-                    PLOG("\n\t... cousin - cousin.");
+                    LOG("\n\t... cousin - cousin.");
                     break;
             }
         }
@@ -679,6 +723,6 @@ double pop_model_BLL::age_of_death()
     double raw =  - ( log( RND * (1 - alpha) + alpha ) / beta ); //from solving m(a) for a.
     double prob = raw * t_unit - floor(raw * t_unit);
     double adjusted = floor(raw * t_unit) / t_unit + ( RND < prob ? 1.0 : 0.0 );
-    //PLOG("\nRaw %g, prob %g, adjusted %g",raw,prob,adjusted);
+    //LOG("\nRaw %g, prob %g, adjusted %g",raw,prob,adjusted);
     return adjusted;
 }

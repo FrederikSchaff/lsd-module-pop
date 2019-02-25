@@ -184,9 +184,9 @@ class pop_map {
         double t_now; //starting time
         double t_unit; //interval size for time
         double femaleRatio; //chance to be female
-        
-        enum kinship_system {Language, Civil, Canon, Collateral}; //more can be added.        
-        kinship_system ks = Civil;
+
+        enum kinship_system {Language, Civil, Canon, Collateral}; //more can be added.
+        kinship_system ks = Language; //default
 
         std::map< int, pop_person > persons;  //all agent information, alive or dead, sorted by their unique ID
         //to do: this is rather slow as it seems. The reason is
@@ -198,6 +198,8 @@ class pop_map {
 
 
         // using agents.emplace_hint(agents.end(),uID,pop_agent() )
+        
+        const int check_if_person(const int uID); //checks if there is a person for the uID, returning the uID if yes and -1 else.
 
         void add_person(int uID, int f_uID, int m_uID);
         void person_dies(int uID); //delete from subsets of alive agents
@@ -236,10 +238,8 @@ class pop_map {
         {
             delete model;
         }
-        
-        void set_kinship_system( kinship_system _ks ){
-            ks = _ks;
-        }
+
+        void set_kinship_system( const char _ks[] );  //Civil, Canon, Collateral
 
         double const_pop_fert(double n) //equilibrium fertility rate for pop of size n.
         {
@@ -285,7 +285,7 @@ class pop_map {
         bool is_alive(object* uID);
         int nchildren(object* uID);
 
-        object* random_person(char gender, double age_low, double age_high, object* fake_caller=NULL, int lag=0,  char varLab[]="", char condition='0', double condVal = 0.0, bool random = true);
+        object* random_person(char gender, double age_low, double age_high, object* fake_caller = NULL, int lag = 0,  char varLab[] = "", char condition = '0', double condVal = 0.0, bool random = true);
 
         friend struct pop_selection; //functor to select some elements.
 
@@ -324,13 +324,13 @@ struct pop_selection {
     object* next();
 
 
-    pop_selection( pop_map* map, char gender, double age_low, double age_high, object* fake_caller=NULL, int lag=0,  char varLab[]="", char condition='0', double condVal = 0.0, bool random = true)
+    pop_selection( pop_map* map, char gender, double age_low, double age_high, object* fake_caller = NULL, int lag = 0,  char varLab[] = "", char condition = '0', double condVal = 0.0, bool random = true)
         : map(map), gender(gender), age_low(age_low), age_high(age_high)
-    {        
+    {
         const bool has_condition = (condition == '>' || condition == '<' || condition == '=' || condition == '!' );
         if (age_low != -1 && age_high != -1 && age_low > age_high)
             error_hard( "Error in 'pop_selection()'", "age_low > age_high",
-                "Check your code to prevent this situation." );
+                        "Check your code to prevent this situation." );
         double birth_low = age_high > 0 ? map->t_now - age_high : 0;
         double birth_high = age_low > 0 ? map->t_now - age_low : map->t_now;
         // int track = 0;
@@ -376,11 +376,11 @@ struct pop_selection {
                     if (false == meetsCondition)
                         continue; //skip this item
                 }//end conditional
-                
+
                 selection.emplace_back(RND, it_temp->second);
                 // if (++track > 10000) {
-                    // error_hard( "Error in 'pop_selection()'", "f",
-                                // "contact the developer." );
+                // error_hard( "Error in 'pop_selection()'", "f",
+                // "contact the developer." );
                 // }
             }
         }
@@ -390,7 +390,7 @@ struct pop_selection {
             auto const& it_stop = (birth_high < 0) ? map->females_by_birth.end() : map->females_by_birth.upper_bound(birth_high);
             for (auto it_temp = it_start; it_temp != it_stop; it_temp++) {
                 //check condition, if necessary
-                if (has_condition) {                                       
+                if (has_condition) {
                     object* this_obj = root->obj_by_unique_id(it_temp->second);
                     variable* condVar = this_obj->search_var_local(varLab);
                     bool meetsCondition = false;
@@ -426,15 +426,15 @@ struct pop_selection {
                     }
                     if (false == meetsCondition)
                         continue; //skip this item
-                }//end conditional                
-                
+                }//end conditional
+
                 selection.emplace_back(RND, it_temp->second);
                 // if (++track > 10000) {
-                    // char buffer[300];
-                    // sprintf(buffer, "\nid at it_start: %i; and at it_stop: %i. Age low(birth_high): %g (%g), age high(birth_low): %g(%g)", it_start->second, (it_stop)->second, age_low, birth_high, age_high, birth_low);
-                    // plog(buffer);
-                    // error_hard( "Error in 'pop_selection()'", "m",
-                                // "contact the developer." );
+                // char buffer[300];
+                // sprintf(buffer, "\nid at it_start: %i; and at it_stop: %i. Age low(birth_high): %g (%g), age high(birth_low): %g(%g)", it_start->second, (it_stop)->second, age_low, birth_high, age_high, birth_low);
+                // plog(buffer);
+                // error_hard( "Error in 'pop_selection()'", "m",
+                // "contact the developer." );
                 // }
             }
         }
@@ -462,5 +462,7 @@ struct pop_person {
     //constructor
     pop_person(int uID, int f_uID, int m_uID, char gender, double t_birth, double age, double d_age) :
         alive(true), uID(uID), f_uID(f_uID), m_uID(m_uID), gender(gender), t_birth(t_birth), age(age), d_age(d_age)
-    { t_delivery = 0.0; }
+    {
+        t_delivery = 0.0;
+    }
 };
