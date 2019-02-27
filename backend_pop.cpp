@@ -388,7 +388,7 @@ object* pop_selection::next()
         return root->obj_by_unique_id(it_selection->second);
 }
 
-object* pop_map::random_person(char gender, double age_low, double age_high, object* fake_caller, int lag,  char varLab[], char condition, double condVal, bool random)
+object* pop_map::random_person(char gender, double age_low, double age_high, object* fake_caller, int lag, const char varLab[], const char condition[], double condVal, bool random)
 {
     return  pop_selection(this, gender, age_low, age_high, fake_caller, lag, varLab, condition, condVal, random).first();
 }
@@ -449,7 +449,7 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
         return -1;     //no testing
     }
 
-    const bool verbose_logging = true;
+    const bool verbose_logging = false;
 
     VERBOSE_MODE(verbose_logging) {
         LOG("\nPopulation Model :   : ext_pop::check_if_incest : called with mother %i, father %i and max degree %i", m_uID, f_uID, max_tested_degree);
@@ -460,8 +460,8 @@ int pop_map::family_degree(int m_uID, int f_uID, int max_tested_degree)
     if( max_tested_degree > max_testable_degree ) {
         char buffer[300];
         sprintf( buffer, "failure in %s ", __func__ );
-        error_hard( buffer, "the maximum tested degree is higher than allowed",
-                    "check your code to prevent this situation" );
+        error_hard( buffer, "the maximum tested degree is higher than allowed (5 - cousins )",
+                    "check your code to prevent this situation or contact the developer" );
         return -2;
     }
 

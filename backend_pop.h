@@ -285,7 +285,7 @@ class pop_map {
         bool is_alive(object* uID);
         int nchildren(object* uID);
 
-        object* random_person(char gender, double age_low, double age_high, object* fake_caller = NULL, int lag = 0,  char varLab[] = "", char condition = '0', double condVal = 0.0, bool random = true);
+        object* random_person(char gender, double age_low, double age_high, object* fake_caller = NULL, int lag = 0,  const char varLab[] = "", const char condition[] = "", double condVal = 0.0, bool random = true);
 
         friend struct pop_selection; //functor to select some elements.
 
@@ -324,10 +324,10 @@ struct pop_selection {
     object* next();
 
 
-    pop_selection( pop_map* map, char gender, double age_low, double age_high, object* fake_caller = NULL, int lag = 0,  char varLab[] = "", char condition = '0', double condVal = 0.0, bool random = true)
+    pop_selection( pop_map* map, char gender, double age_low, double age_high, object* fake_caller = NULL, int lag = 0,  const char varLab[] = "", const char condition[] = "", double condVal = 0.0, bool random = true)
         : map(map), gender(gender), age_low(age_low), age_high(age_high)
     {
-        const bool has_condition = (condition == '>' || condition == '<' || condition == '=' || condition == '!' );
+        const bool has_condition = ! (strlen(condition) == 0);
         if (age_low != -1 && age_high != -1 && age_low > age_high)
             error_hard( "Error in 'pop_selection()'", "age_low > age_high",
                         "Check your code to prevent this situation." );
@@ -341,47 +341,11 @@ struct pop_selection {
                 //check condition, if necessary
                 if (has_condition) {
                     object* this_obj = root->obj_by_unique_id(it_temp->second);
-                    variable* condVar = this_obj->search_var_local(varLab);
-                    bool meetsCondition = false;
-                    if (condVar == NULL) {
-                        char buffer[300];
-                        sprintf( buffer, "'%s' is missing for conditional searching in %s in population module", varLab, __func__ );
-                        error_hard( buffer, "variable or parameter not found",
-                                    "check your code to prevent this situation" );
-                        return;
-                    }
-
-                    double val;
-                    if (fake_caller == NULL)
-                        val = condVar->cal(this_obj, lag);
-                    else
-                        val = condVar->cal(fake_caller, lag);
-
-                    switch (condition) {
-                        case '=':
-                            meetsCondition = ( val == condVal ? true : false );
-                            break;
-                        case '>':
-                            meetsCondition = ( val > condVal ? true : false );
-                            break;
-                        case '<':
-                            meetsCondition = ( val < condVal ? true : false );
-                            break;
-                        case '!':
-                            meetsCondition = ( val != condVal ? true : false );
-                            break;
-                        default :
-                            meetsCondition = false;
-                    }
-                    if (false == meetsCondition)
-                        continue; //skip this item
+                    if (! (this_obj->check_condition( varLab, condition, condVal, fake_caller, lag) ) )
+                        continue;
                 }//end conditional
 
                 selection.emplace_back(RND, it_temp->second);
-                // if (++track > 10000) {
-                // error_hard( "Error in 'pop_selection()'", "f",
-                // "contact the developer." );
-                // }
             }
         }
         // track = 0;
@@ -392,50 +356,11 @@ struct pop_selection {
                 //check condition, if necessary
                 if (has_condition) {
                     object* this_obj = root->obj_by_unique_id(it_temp->second);
-                    variable* condVar = this_obj->search_var_local(varLab);
-                    bool meetsCondition = false;
-                    if (condVar == NULL) {
-                        char buffer[300];
-                        sprintf( buffer, "'%s' is missing for conditional searching in %s in population module", varLab, __func__ );
-                        error_hard( buffer, "variable or parameter not found",
-                                    "check your code to prevent this situation" );
-                        return;
-                    }
-
-                    double val;
-                    if (fake_caller == NULL)
-                        val = condVar->cal(this_obj, lag);
-                    else
-                        val = condVar->cal(fake_caller, lag);
-
-                    switch (condition) {
-                        case '=':
-                            meetsCondition = ( val == condVal ? true : false );
-                            break;
-                        case '>':
-                            meetsCondition = ( val > condVal ? true : false );
-                            break;
-                        case '<':
-                            meetsCondition = ( val < condVal ? true : false );
-                            break;
-                        case '!':
-                            meetsCondition = ( val != condVal ? true : false );
-                            break;
-                        default :
-                            meetsCondition = false;
-                    }
-                    if (false == meetsCondition)
-                        continue; //skip this item
+                    if (! (this_obj->check_condition( varLab, condition, condVal, fake_caller, lag) ) )
+                        continue;
                 }//end conditional
 
                 selection.emplace_back(RND, it_temp->second);
-                // if (++track > 10000) {
-                // char buffer[300];
-                // sprintf(buffer, "\nid at it_start: %i; and at it_stop: %i. Age low(birth_high): %g (%g), age high(birth_low): %g(%g)", it_start->second, (it_stop)->second, age_low, birth_high, age_high, birth_low);
-                // plog(buffer);
-                // error_hard( "Error in 'pop_selection()'", "m",
-                // "contact the developer." );
-                // }
             }
         }
         //randomise
