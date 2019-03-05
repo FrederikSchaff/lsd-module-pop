@@ -401,7 +401,7 @@ std::string pop_map::person_info(object* uID)
 
 std::string pop_map::person_info(int uID)
 {
-    std::string buffer =  "\nPOP PERSON INFO:";
+    std::string buffer =  "\n(POP PERSON INFO) t="+std::to_string(t)+": ";
     pop_person const& POI = persons.at(uID);
     object* oPOI = root->obj_by_unique_id(uID);
     buffer += " uID: "      + std::to_string(POI.uID);
@@ -414,7 +414,7 @@ std::string pop_map::person_info(int uID)
     buffer += ", father: "   + std::to_string(POI.f_uID);
 
     if (ANY_GISS(oPOI))
-        buffer += oPOI->gis_info();
+        buffer += oPOI->gis_info(true); //append mode
     return buffer;
 }
 
