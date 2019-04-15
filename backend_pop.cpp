@@ -109,7 +109,7 @@ void pop_map::add_person(int uID, int f_uID, int m_uID)
     }
 
 
-    bool female = RND < femaleRatio ? true : false;
+    bool female = RND < femaleShare ? true : false;
     const double age = 0.0;
     const double& t_birth = t_now;
     if (f_uID > -1)

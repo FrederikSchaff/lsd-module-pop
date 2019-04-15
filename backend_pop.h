@@ -183,7 +183,7 @@ class pop_map {
         pop_model* model; //hold info on survival function / statistical or data driven population model
         double t_now; //starting time
         double t_unit; //interval size for time
-        double femaleRatio; //chance to be female
+        double femaleShare; //chance to be female
 
         enum kinship_system {Language, Civil, Canon, Collateral}; //more can be added.
         kinship_system ks = Language; //default
@@ -228,9 +228,10 @@ class pop_map {
 
     public:   //external (access via macros)
 
-        pop_map(const char model_type[], double t_start, double t_unit, double femaleRatio, double par1 = 0.0, double par2 = 0.0)
-            : t_now(t_start), t_unit(t_unit), femaleRatio(femaleRatio)
+        pop_map(const char model_type[], double t_start, double t_unit, double maleRatio, double par1 = 0.0, double par2 = 0.0)
+            : t_now(t_start), t_unit(t_unit)
         {
+            femaleShare = 1.0 - ( maleRatio / ( 1.0 + maleRatio ) );
             model = new pop_model(model_type, t_unit, par1, par2);
             n_alive = 0;
         }

@@ -53,7 +53,12 @@ const bool TEST_POP_MODULE = false; //switch for testing
 
 pop_map* population; //create global pop_map;
 
+
 #define INIT_POPULATION_MODULE(model, t_start,  ... ) { population = new pop_map(model, t_start, __VA_ARGS__ ); }
+//... are: double t_start, double t_unit, double maleRatio 
+//      and optional: ... , double par1, double par2 (e.g. BLL model)
+//
+
 #define POP_SET_FAMILY_SYSTEM( system ) { population->set_kinship_system(system); }
 
 #define POP_INITN_GENERATIONS { population->init_generations(); } //number of generations it takes to initialise the model
