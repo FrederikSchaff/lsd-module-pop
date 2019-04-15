@@ -1,13 +1,11 @@
-​                                                                                              Januar 2019 - v0.11
+                                                                                              April 2019 - v0.2
  LSD Population module - backend for LSD-GIS
   written by Frederik Schaff, Ruhr-University Bochum
 
   for infos on LSD see [https://github.com/marcov64/Lsd/](https://github.com/marcov64/Lsd/)
   to use this module you need to use my extension LSD-GIS: [https://github.com/marcov64/Lsd/tree/GIS-beta](https://github.com/marcov64/Lsd/tree/GIS-beta)
 
-	Copyright Frederik Schaff
-  This code is distributed under the MIT License
-
+	Copyright Frederik Schaff, MIT Licence
  The module is not well documented yet, if you have any questions, feel free to drop me a mail: [frederik.schaff@rub.de](frederik.schaff@rub.de) 
 
 # Usage
@@ -16,7 +14,9 @@
 
 Take a look at the template model which includes the (or a) recent version of this module:
 
-ADD LINK TO GITHUB
+https://github.com/FrederikSchaff/LSD-SynthPop 
+
+Currently a statistical model from (1) is implemented.
 
 #### References:
 
